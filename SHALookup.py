@@ -5,9 +5,10 @@ import hashlib
 from datetime import datetime
 from html import unescape
 import re
+from pathlib import Path
 
 from config import stashconfig
-VERSION = "0.0.1"
+VERSION = "0.0.2-relpath"
 
 try:
     import requests
@@ -37,7 +38,18 @@ def compute_sha256(file_name):
     return hash_sha256.hexdigest()
 
 def sha_file(scene):
-    return compute_sha256(scene['files'][0]['path'])
+    try:
+        return compute_sha256(scene['files'][0]['path'])
+    except FileNotFoundError:
+        try:
+            log.debug(scene['files'][0]['path'])
+            # try looking in relative path
+            # move up two directories from /scrapers/SHALookup
+            newpath = os.path.join(Path.cwd().parent.parent, scene['files'][0]['path'])
+            return compute_sha256(newpath)
+        except FileNotFoundError:
+            log.error("File not found. Check if the file exists and is accessible.")
+            sys.exit(1)
 
 # get post
 headers = {
@@ -146,6 +158,7 @@ FRAGMENT = json.loads(sys.stdin.read())
 SCENE_ID = FRAGMENT.get('id')
 scene = stash.find_scene(SCENE_ID)
 hash = sha_file(scene)
+log.debug(hash)
 #hash = "62502c1614d81da354a2cf1aa4a3ce60525c7cff4db648c8bbaaf686ba94fd52"
 result = getPostByHash(hash)
 print(json.dumps(result))
