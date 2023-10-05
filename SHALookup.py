@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig
-VERSION = "0.0.2-relpath"
+VERSION = "0.0.3-title"
 
 try:
     import requests
@@ -95,7 +95,17 @@ def parseAPI(path):
     scene = sceneres.json()[0]
     date = datetime.strptime(scene['published'], '%a, %d %b %Y %H:%M:%S %Z').strftime('%Y-%m-%d')
     result = {}
-    result['Title'] = scene['title'] if scene['title'] else date
+    # title parsing
+    if not scene['title']: # if no title, replace with date
+        result['Title'] = date
+    elif len(scene['title']) <= 2:  # if length <= 2, append date
+        result['Title'] = f"{scene['title']} - {date}"
+    elif scene['title'].endswith('..'): # if title is truncated, remove last word
+        lastspace = scene['title'].rfind(' ')
+        result['Title'] = scene['title'][:lastspace]
+    else:
+        result['Title'] = scene['title']
+
     result['Details'] = unescape(scene['content'])
     result['Date'] = date
     result['Studio'] = {}
