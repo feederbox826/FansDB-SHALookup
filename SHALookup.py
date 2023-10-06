@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "0.0.4-tags"
+VERSION = "0.0.5-stashtags"
 
 try:
     import requests
@@ -172,6 +172,10 @@ def scrape():
     nomatch_id = stash.find_tag(failure_tag, create=True).get('id')
     success_id = stash.find_tag(success_tag, create=True).get('id')
     scene = stash.find_scene(SCENE_ID)
+    # log.debug(scene)
+    if len(scene['stash_ids']) > 0:
+        log.debug("Already in stash, skipping")
+        return None
     alltags = [tag["id"] for tag in scene["tags"]]
     if nomatch_id in alltags or success_id in alltags:
         log.debug("Already searched, skipping")
