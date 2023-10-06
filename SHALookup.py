@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "0.0.5-stashtags"
+VERSION = "0.0.6-charlim"
 
 try:
     import requests
@@ -101,7 +101,7 @@ def parseAPI(path):
     # title parsing
     if not scene['title']: # if no title, replace with date
         result['Title'] = date
-    elif len(scene['title']) <= 2:  # if length <= 2, append date
+    elif len(scene['title']) <= 5:  # if length <= 5, append date
         result['Title'] = f"{scene['title']} - {date}"
     elif scene['title'].endswith('..'): # if title is truncated, remove last word
         lastspace = scene['title'].rfind(' ')

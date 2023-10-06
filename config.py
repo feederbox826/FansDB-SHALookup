@@ -8,4 +8,3 @@ stashconfig = {
 success_tag = "[SHA: Scraped]"
 failure_tag = "[SHA: No Match]"
 #### /END EDIT ME
-# updated v0.0.4-tags
