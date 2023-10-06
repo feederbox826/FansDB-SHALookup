@@ -7,8 +7,8 @@ from html import unescape
 import re
 from pathlib import Path
 
-from config import stashconfig
-VERSION = "0.0.3-title"
+from config import stashconfig, success_tag, failure_tag
+VERSION = "0.0.4-tags"
 
 try:
     import requests
@@ -55,6 +55,9 @@ def sha_file(scene):
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0'
 }
+
+# define stash globally
+stash = StashInterface(stashconfig)
 
 def getPostByHash(hash):
     res = requests.get('https://coomer.party/search_hash?hash=' + hash, headers=headers)
@@ -163,16 +166,41 @@ def parseOnlyFans(path, hash):
     result['Performers'].append({ 'Name': getnamefromalias(username) })
     return result
 
-stash = StashInterface(stashconfig)
-FRAGMENT = json.loads(sys.stdin.read())
-SCENE_ID = FRAGMENT.get('id')
-scene = stash.find_scene(SCENE_ID)
-hash = sha_file(scene)
-log.debug(hash)
-#hash = "62502c1614d81da354a2cf1aa4a3ce60525c7cff4db648c8bbaaf686ba94fd52"
-result = getPostByHash(hash)
-print(json.dumps(result))
-sys.exit(0)
+def scrape():
+    FRAGMENT = json.loads(sys.stdin.read())
+    SCENE_ID = FRAGMENT.get('id')
+    nomatch_id = stash.find_tag(failure_tag, create=True).get('id')
+    success_id = stash.find_tag(success_tag, create=True).get('id')
+    scene = stash.find_scene(SCENE_ID)
+    alltags = [tag["id"] for tag in scene["tags"]]
+    if nomatch_id in alltags or success_id in alltags:
+        log.debug("Already searched, skipping")
+        return None
+    hash = sha_file(scene)
+    log.debug(hash)
+    result = getPostByHash(hash)
+    # if no result, add "SHA: No Match tag"
+    if (result == None):
+        stash.update_scenes({
+            'ids': [SCENE_ID],
+            'tag_ids': {
+                'mode': 'ADD',
+                'ids': [nomatch_id]
+            }
+        })
+        return None
+    # if result, add tag
+    result['Tags'] = [{}]
+    result['Tags'][0]['Name'] = success_tag
+    return result
+
+def main():
+    result = scrape()
+    print(json.dumps(result))
+    log.exit("Plugin exited normally.")
+
+if __name__ == '__main__':
+    main()
 
 # by Scruffy, feederbox826
 # Last Updated

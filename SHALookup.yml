@@ -1,10 +1,11 @@
-name: "SHA256 Lookup"
-sceneByFragment:
-    action: script
-    script:
-      - python
-      # use python3 instead if needed
-      - SHALookup.py
-      - query
-
-# Last Updated Oct 03, 2023
+#### EDIT ME
+stashconfig = {
+    "scheme": "http",
+    "Host":"localhost",
+    "Port": "9999",
+    "ApiKey": "",
+}
+success_tag = "[SHA: Scraped]"
+failure_tag = "[SHA: No Match]"
+#### /END EDIT ME
+# updated v0.0.4-tags
