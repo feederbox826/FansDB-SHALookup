@@ -8,7 +8,8 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "0.0.6-charlim"
+VERSION = "0.0.7-truncated"
+MAX_TITLE_LENGTH = 64
 
 try:
     import requests
@@ -90,6 +91,32 @@ def searchPerformers(scene):
     usernames = re.findall(pattern,unescape(searchtext))
     return usernames
 
+# from dolphinfix
+def truncate_title(title, max_length):
+    # Check if the title is already under max length
+    if len(title) <= max_length:
+        return title
+    # Find the last space character before max length
+    last_space_index = title.rfind(" ",, max_length)
+    # truncate at last_space_index if valid, else max_length
+    title_end = last_space_index if last_space_index != -1 else max_length
+    return title[:title_end]
+
+# from dolphinfix
+def format_title(description, username, date):
+    formatted_title = truncate_title(
+        description.split("\n")[0].strip().replace("<br />", ""), MAX_TITLE_LENGTH
+    )
+    if not len(description): # no description, return username and date
+        return username + " - " + date
+    elif len(formatted_title) <= 5: # title too short, add date
+        return formatted_title + " - " + date
+    elif not bool(re.search("[A-Za-z0-9]", formatted_title)): # textless, truncate and add date
+        # decrease MAX_TITLE_LENGTH further to account for " - YYYY-MM-DD"
+        return truncate_title(formatted_title, MAX_TITLE_LENGTH - 13) + " - " + date
+    else:
+        return formatted_title
+
 def parseAPI(path):
     sceneres = requests.get('https://coomer.party/api' + path)
     if not sceneres.status_code == 200:
@@ -98,18 +125,10 @@ def parseAPI(path):
     scene = sceneres.json()[0]
     date = datetime.strptime(scene['published'], '%a, %d %b %Y %H:%M:%S %Z').strftime('%Y-%m-%d')
     result = {}
+    scene['content'] = unescape(scene['content'])
     # title parsing
-    if not scene['title']: # if no title, replace with date
-        result['Title'] = date
-    elif len(scene['title']) <= 5:  # if length <= 5, append date
-        result['Title'] = f"{scene['title']} - {date}"
-    elif scene['title'].endswith('..'): # if title is truncated, remove last word
-        lastspace = scene['title'].rfind(' ')
-        result['Title'] = scene['title'][:lastspace]
-    else:
-        result['Title'] = scene['title']
-
-    result['Details'] = unescape(scene['content'])
+    result['Title'] = format_title(scene['content'], scene['user'], date)
+    result['Details'] = scene['content']
     result['Date'] = date
     result['Studio'] = {}
     result['Performers'] = []
@@ -207,4 +226,4 @@ if __name__ == '__main__':
     main()
 
 # by Scruffy, feederbox826
-# Last Updated
+# Last Updated 2023-10-12
