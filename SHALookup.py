@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "0.0.7-truncated"
+VERSION = "0.1.0-truncated"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -97,7 +97,7 @@ def truncate_title(title, max_length):
     if len(title) <= max_length:
         return title
     # Find the last space character before max length
-    last_space_index = title.rfind(" ",, max_length)
+    last_space_index = title.rfind(" ",0, max_length)
     # truncate at last_space_index if valid, else max_length
     title_end = last_space_index if last_space_index != -1 else max_length
     return title[:title_end]
