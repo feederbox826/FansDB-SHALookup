@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "0.1.1-fixfansly"
+VERSION = "0.1.2-fixcontent"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -158,7 +158,7 @@ def parseFansly(path, hash):
         log.error(f"Request to '{url}' failed with status code {performerres.status}")
         sys.exit(1)
     username = performerres.json()['name']
-    result['Title'] = format_title(result['content'], username, result['Date'])
+    result['Title'] = format_title(result['Details'], username, result['Date'])
     # craft fansly URL
     result['URL'] = f"https://fansly.com/post/{scene['id']}"
     # add studio and performer
@@ -178,7 +178,7 @@ def parseOnlyFans(path, hash):
     result, scene = parseAPI(path)
     log.debug(scene)
     username = scene['user']
-    result['Title'] = format_title(result['content'], username, result['Date'])
+    result['Title'] = format_title(result['Details'], username, result['Date'])
     # craft OnlyFans URL
     result['URL'] = f"https://onlyfans.com/{scene['id']}/{username}"
     # add studio and performer
