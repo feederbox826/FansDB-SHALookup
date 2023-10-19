@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "0.1.2-fixcontent"
+VERSION = "1.1.0"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -61,23 +61,30 @@ headers = {
 stash = StashInterface(stashconfig)
 
 def getPostByHash(hash):
-    res = requests.get('https://coomer.party/search_hash?hash=' + hash, headers=headers)
-    if not res.status_code == 200:
-        log.error(f"Request to '{url}' failed with status code {res.status}")
+    shares = requests.get('https://coomer.party/api/v1/search_hash/' + hash, headers=headers)
+    data = shares.json()
+    if (shares.status_code == 404 or len(data) == 0):
+        log.debug("No results found")
         return None
-    tree = html.fromstring(res.text)
-    article = tree.xpath('//article[1]/a')
-    if (len(article) == 0):
-        log.error("No post found for hash " + hash)
-        return None
-    link = article[0].get('href')
-    return splitLookup(link, hash)
+    # construct url to fetch from API
+    post = data['posts'][0]
+    path = f'https://coomer.party/api/v1/{post["service"]}/user/{post["user"]}/post/{post["id"]}'
+    # fetch post
+    postres = requests.get(path, headers=headers)
+    if postres.status_code == 404:
+        log.error("Post not found")
+        sys.exit(1)
+    elif not postres.status_code == 200:
+        log.error(f"Request failed with status code {res.status}")
+        sys.exit(1)
+    scene = postres.json()
+    return splitLookup(scene, hash)
 
-def splitLookup(path, hash):
-    if (path.startswith('/fansly/')):
-        return parseFansly(path, hash)
+def splitLookup(scene, hash):
+    if (scene['service'] == "fansly"):
+        return parseFansly(scene, hash)
     else:
-        return parseOnlyFans(path, hash)
+        return parseOnlyFans(scene, hash)
 
 def searchPerformers(scene):
     pattern = re.compile(r"@([\w\-\.]+)")
@@ -117,13 +124,8 @@ def format_title(description, username, date):
     else:
         return formatted_title
 
-def parseAPI(path):
-    sceneres = requests.get('https://coomer.party/api' + path)
-    if not sceneres.status_code == 200:
-        log.error(f"Request to '{url}' failed with status code {sceneres.status}")
-        sys.exit(1)
-    scene = sceneres.json()[0]
-    date = datetime.strptime(scene['published'], '%a, %d %b %Y %H:%M:%S %Z').strftime('%Y-%m-%d')
+def parseAPI(scene):
+    date = datetime.strptime(scene['published'], '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
     result = {}
     scene['content'] = unescape(scene['content'])
     # title parsing
@@ -148,16 +150,24 @@ def getnamefromalias(alias):
         return perfs[0]['name']
     return alias
 
-# if fansly
-def parseFansly(path, hash):
-    # fetch scene
-    result, scene = parseAPI(path)
-    # look up performer username
-    performerres = requests.get(f"https://coomer.party/api/lookup/cache/{scene['user']}?service=fansly")
-    if not performerres.status_code == 200:
-        log.error(f"Request to '{url}' failed with status code {performerres.status}")
+def getFanslyUsername(id):
+    res = requests.get(f"https://coomer.party/fansly/user/{id}", headers=headers)
+    if not res.status_code == 200:
+        log.error(f"Request failed with status code {res.status}")
         sys.exit(1)
-    username = performerres.json()['name']
+    tree = html.fromstring(res.text)
+    userbox = tree.xpath('//*[@id="user-header__info-top"]/a/span[2]')
+    if (len(userbox) == 0):
+        log.error("No user found for id " + id)
+        return None
+    return userbox[0].text
+
+# if fansly
+def parseFansly(scene, hash):
+    # fetch scene
+    result, scene = parseAPI(scene)
+    # look up performer username
+    username = getFanslyUsername(scene['user'])
     result['Title'] = format_title(result['Details'], username, result['Date'])
     # craft fansly URL
     result['URL'] = f"https://fansly.com/post/{scene['id']}"
@@ -173,10 +183,9 @@ def parseFansly(path, hash):
     return result
 
 # if onlyfans
-def parseOnlyFans(path, hash):
+def parseOnlyFans(scene, hash):
     # fetch scene
-    result, scene = parseAPI(path)
-    log.debug(scene)
+    result, scene = parseAPI(scene)
     username = scene['user']
     result['Title'] = format_title(result['Details'], username, result['Date'])
     # craft OnlyFans URL
@@ -227,4 +236,4 @@ if __name__ == '__main__':
     main()
 
 # by Scruffy, feederbox826
-# Last Updated 2023-10-12
+# Last Updated 2023-10-19
