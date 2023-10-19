@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -127,7 +127,7 @@ def format_title(description, username, date):
 def parseAPI(scene):
     date = datetime.strptime(scene['published'], '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
     result = {}
-    scene['content'] = unescape(scene['content'])
+    scene['content'] = unescape(scene['content']).replace("<br />", "\n")
     # title parsing
     result['Details'] = scene['content']
     result['Date'] = date
