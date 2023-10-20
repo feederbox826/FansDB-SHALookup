@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "1.1.1"
+VERSION = "1.2.0"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -124,7 +124,7 @@ def format_title(description, username, date):
     else:
         return formatted_title
 
-def parseAPI(scene):
+def parseAPI(scene, hash):
     date = datetime.strptime(scene['published'], '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
     result = {}
     scene['content'] = unescape(scene['content']).replace("<br />", "\n")
@@ -139,6 +139,15 @@ def parseAPI(scene):
     for name in list(set(usernames)):
         name = name.strip('.') # remove trailing full stop
         result['Performers'].append({'Name': getnamefromalias(name)})
+    # figure out multi-part scene
+    # create array with file and attachments
+    files = [scene['file']] + scene['attachments']
+    # only include videos
+    files = [file for file in files if file['path'].endswith(".m4v") or file['path'].endswith(".mp4")]
+    for i, file in enumerate(files):
+        if hash in file['path']:
+            scene['part'] = i + 1
+    scene['total'] = len(files)
     # add studio in specific function
     return result, scene
 
@@ -165,10 +174,13 @@ def getFanslyUsername(id):
 # if fansly
 def parseFansly(scene, hash):
     # fetch scene
-    result, scene = parseAPI(scene)
+    result, scene = parseAPI(scene, hash)
     # look up performer username
     username = getFanslyUsername(scene['user'])
     result['Title'] = format_title(result['Details'], username, result['Date'])
+    # add part on afterwards
+    if scene['total'] > 1:
+        result['Title'] += f" {scene['part']}/{scene['total']}"
     # craft fansly URL
     result['URL'] = f"https://fansly.com/post/{scene['id']}"
     # add studio and performer
@@ -185,9 +197,12 @@ def parseFansly(scene, hash):
 # if onlyfans
 def parseOnlyFans(scene, hash):
     # fetch scene
-    result, scene = parseAPI(scene)
+    result, scene = parseAPI(scene, hash)
     username = scene['user']
     result['Title'] = format_title(result['Details'], username, result['Date'])
+    # add part on afterwards
+    if scene['total'] > 1:
+        result['Title'] += f" {scene['part']}/{scene['total']}"
     # craft OnlyFans URL
     result['URL'] = f"https://onlyfans.com/{scene['id']}/{username}"
     # add studio and performer
@@ -236,4 +251,4 @@ if __name__ == '__main__':
     main()
 
 # by Scruffy, feederbox826
-# Last Updated 2023-10-19
+# Last Updated 2023-10-20
