@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "1.2.0"
+VERSION = "1.2.1"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -133,6 +133,7 @@ def parseAPI(scene, hash):
     result['Date'] = date
     result['Studio'] = {}
     result['Performers'] = []
+    result['Tags'] = []
     # parse usernames
     usernames = searchPerformers(scene)
     log.debug(usernames)
@@ -141,7 +142,10 @@ def parseAPI(scene, hash):
         result['Performers'].append({'Name': getnamefromalias(name)})
     # figure out multi-part scene
     # create array with file and attachments
-    files = [scene['file']] + scene['attachments']
+    if (scene['file']):
+        files = [scene['file']] + scene['attachments']
+    else:
+        files = scene['attachments']
     # only include videos
     files = [file for file in files if file['path'].endswith(".m4v") or file['path'].endswith(".mp4")]
     for i, file in enumerate(files):
@@ -189,8 +193,7 @@ def parseFansly(scene, hash):
     # Add trailer if hash matches preview
     for attachment in scene['attachments']:
         if 'preview' in attachment['name'] and hash in attachment['path']:
-            result['Tags'] = [{}]
-            result['Tags'][0]['Name'] = 'Trailer'
+            result['Tags'].append({ "Name": 'Trailer' })
             break
     return result
 
@@ -238,8 +241,7 @@ def scrape():
         })
         return None
     # if result, add tag
-    result['Tags'] = [{}]
-    result['Tags'][0]['Name'] = success_tag
+    result['Tags'].append({ 'Name': success_tag })
     return result
 
 def main():
