@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "1.2.1"
+VERSION = "1.2.2"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -61,14 +61,14 @@ headers = {
 stash = StashInterface(stashconfig)
 
 def getPostByHash(hash):
-    shares = requests.get('https://coomer.party/api/v1/search_hash/' + hash, headers=headers)
+    shares = requests.get('https://coomer.su/api/v1/search_hash/' + hash, headers=headers)
     data = shares.json()
     if (shares.status_code == 404 or len(data) == 0):
         log.debug("No results found")
         return None
     # construct url to fetch from API
     post = data['posts'][0]
-    path = f'https://coomer.party/api/v1/{post["service"]}/user/{post["user"]}/post/{post["id"]}'
+    path = f'https://coomer.su/api/v1/{post["service"]}/user/{post["user"]}/post/{post["id"]}'
     # fetch post
     postres = requests.get(path, headers=headers)
     if postres.status_code == 404:
@@ -164,7 +164,7 @@ def getnamefromalias(alias):
     return alias
 
 def getFanslyUsername(id):
-    res = requests.get(f"https://coomer.party/fansly/user/{id}", headers=headers)
+    res = requests.get(f"https://coomer.su/fansly/user/{id}", headers=headers)
     if not res.status_code == 200:
         log.error(f"Request failed with status code {res.status}")
         sys.exit(1)
@@ -253,4 +253,4 @@ if __name__ == '__main__':
     main()
 
 # by Scruffy, feederbox826
-# Last Updated 2023-10-20
+# Last Updated 2023-10-26
