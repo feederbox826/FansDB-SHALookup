@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "1.2.2"
+VERSION = "1.2.3"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -219,6 +219,9 @@ def scrape():
     nomatch_id = stash.find_tag(failure_tag, create=True).get('id')
     success_id = stash.find_tag(success_tag, create=True).get('id')
     scene = stash.find_scene(SCENE_ID)
+    if (!scene):
+        log.error("Scene not found - check your config.py file")
+        sys.exit(1)
     # log.debug(scene)
     if len(scene['stash_ids']) > 0:
         log.debug("Already in stash, skipping")
@@ -245,9 +248,13 @@ def scrape():
     return result
 
 def main():
-    result = scrape()
-    print(json.dumps(result))
-    log.exit("Plugin exited normally.")
+    try:
+        result = scrape()
+        print(json.dumps(result))
+        log.exit("Plugin exited normally.")
+    except Exception as e:
+        log.error(e)
+        log.exit("Plugin exited with an exception.")
 
 if __name__ == '__main__':
     main()
