@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "1.2.3"
+VERSION = "1.2.4"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -61,7 +61,7 @@ headers = {
 stash = StashInterface(stashconfig)
 
 def getPostByHash(hash):
-    shares = requests.get('https://coomer.su/api/v1/search_hash/' + hash, headers=headers)
+    shares = requests.get('https://coomer.su/api/v1/search_hash/' + hash, headers=headers, timeout=10)
     data = shares.json()
     if (shares.status_code == 404 or len(data) == 0):
         log.debug("No results found")
@@ -75,7 +75,7 @@ def getPostByHash(hash):
         log.error("Post not found")
         sys.exit(1)
     elif not postres.status_code == 200:
-        log.error(f"Request failed with status code {res.status}")
+        log.error(f"Request failed with status code {postres.status}")
         sys.exit(1)
     scene = postres.json()
     return splitLookup(scene, hash)
@@ -219,7 +219,7 @@ def scrape():
     nomatch_id = stash.find_tag(failure_tag, create=True).get('id')
     success_id = stash.find_tag(success_tag, create=True).get('id')
     scene = stash.find_scene(SCENE_ID)
-    if (!scene):
+    if not scene:
         log.error("Scene not found - check your config.py file")
         sys.exit(1)
     # log.debug(scene)
