@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "1.2.4"
+VERSION = "1.2.5"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -87,7 +87,7 @@ def splitLookup(scene, hash):
         return parseOnlyFans(scene, hash)
 
 def searchPerformers(scene):
-    pattern = re.compile(r"@([\w\-\.]+)")
+    pattern = re.compile(r"(?:^|\s)@([\w\-\.]+)")
     content = unescape(scene['content'])
     # if title is truncated, remove trailing dots and skip searching title
     if scene['title'].endswith('..') and scene['title'].removesuffix('..') in content:
