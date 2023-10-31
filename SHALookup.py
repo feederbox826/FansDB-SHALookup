@@ -6,9 +6,11 @@ from datetime import datetime
 from html import unescape
 import re
 from pathlib import Path
+from unicodedata import normalize
+from confusables import remove
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "1.2.5"
+VERSION = "1.2.6"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -109,10 +111,16 @@ def truncate_title(title, max_length):
     title_end = last_space_index if last_space_index != -1 else max_length
     return title[:title_end]
 
+def normalize_title(title):
+    normalized = normalize("NFKD", title)
+    unconfused = remove(normalized)
+    return unconfused.trim()
+
 # from dolphinfix
 def format_title(description, username, date):
+    firstline = description.split("\n")[0].strip().replace("<br />", "")
     formatted_title = truncate_title(
-        description.split("\n")[0].strip().replace("<br />", ""), MAX_TITLE_LENGTH
+        normalize_title(firstline), MAX_TITLE_LENGTH
     )
     if not len(description): # no description, return username and date
         return username + " - " + date
