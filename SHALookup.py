@@ -10,7 +10,7 @@ from unicodedata import normalize
 from confusables import remove
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "1.2.6"
+VERSION = "1.2.7"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -114,7 +114,7 @@ def truncate_title(title, max_length):
 def normalize_title(title):
     normalized = normalize("NFKD", title)
     unconfused = remove(normalized)
-    return unconfused.trim()
+    return unconfused.strip()
 
 # from dolphinfix
 def format_title(description, username, date):
