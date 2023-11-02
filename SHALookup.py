@@ -10,7 +10,7 @@ from unicodedata import normalize
 from confusables import remove
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "1.2.7"
+VERSION = "1.2.8"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -268,4 +268,4 @@ if __name__ == '__main__':
     main()
 
 # by Scruffy, feederbox826
-# Last Updated 2023-10-26
+# Last Updated 2023-11-02
