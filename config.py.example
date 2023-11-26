@@ -1,4 +1,3 @@
-#### EDIT ME
 stashconfig = {
     "scheme": "http",
     "Host":"localhost",
@@ -7,4 +6,3 @@ stashconfig = {
 }
 success_tag = "[SHA: Scraped]"
 failure_tag = "[SHA: No Match]"
-#### /END EDIT ME
