@@ -231,9 +231,6 @@ def scrape():
         log.error("Scene not found - check your config.py file")
         sys.exit(1)
     # log.debug(scene)
-    if len(scene['stash_ids']) > 0:
-        log.debug("Already in stash, skipping")
-        return None
     alltags = [tag["id"] for tag in scene["tags"]]
     if nomatch_id in alltags or success_id in alltags:
         log.debug("Already searched, skipping")
