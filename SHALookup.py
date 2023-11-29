@@ -9,7 +9,7 @@ from pathlib import Path
 from unicodedata import normalize
 from confusables import remove
 
-from config import stashconfig, success_tag, failure_tag
+from config import stashconfig, success_tag, failure_tag, extra_tags
 VERSION = "1.2.8"
 MAX_TITLE_LENGTH = 64
 
@@ -77,7 +77,7 @@ def getPostByHash(hash):
         log.error("Post not found")
         sys.exit(1)
     elif not postres.status_code == 200:
-        log.error(f"Request failed with status code {postres.status}")
+        log.error(f"Request failed with status code {postres.status_code}")
         sys.exit(1)
     scene = postres.json()
     return splitLookup(scene, hash)
@@ -221,6 +221,28 @@ def parseOnlyFans(scene, hash):
     result['Performers'].append({ 'Name': getnamefromalias(username) })
     return result
 
+
+def getExtraTags(scene):
+    result = []
+    resolution = None
+    try:
+        import ffmpeg
+        output = ffmpeg.probe(scene['files'][0]['path'])
+        resolution = output.get("streams")[0].get("width"), output.get("streams")[0].get("height")
+    except ModuleNotFoundError:
+        log.info("Could not import ffmpeg, attempting to get resolution with opencv")
+        try:
+            import cv2
+            output = cv2.VideoCapture(scene['files'][0]['path'])
+            resolution = int(output.get(cv2.CAP_PROP_FRAME_WIDTH)), int(output.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        except ModuleNotFoundError:
+            log.info("Could not import opencv. Consider installing either ffmpeg-python or opencv-python")
+    if resolution:
+        if resolution[1]/resolution[0] >= 1.5:
+            result.append({"Name": "Vertical Video"})
+    return result
+
+
 def scrape():
     FRAGMENT = json.loads(sys.stdin.read())
     SCENE_ID = FRAGMENT.get('id')
@@ -253,6 +275,8 @@ def scrape():
         return None
     # if result, add tag
     result['Tags'].append({ 'Name': success_tag })
+    if extra_tags:
+        result['Tags'].extend(getExtraTags(scene, result))
     return result
 
 def main():

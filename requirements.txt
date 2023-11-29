@@ -1,3 +1,4 @@
-requests
+ffmpeg-python
 lxml
+requests
 stashapp-tools

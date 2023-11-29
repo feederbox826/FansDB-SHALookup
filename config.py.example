@@ -6,3 +6,4 @@ stashconfig = {
 }
 success_tag = "[SHA: Scraped]"
 failure_tag = "[SHA: No Match]"
+extra_tags = True
