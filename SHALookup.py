@@ -8,9 +8,10 @@ import re
 from pathlib import Path
 from unicodedata import normalize
 from confusables import remove
+from sqlite import lookup_sha, add_sha256, setup_sqlite
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "1.2.8"
+VERSION = "1.3.0-beta"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -221,6 +222,19 @@ def parseOnlyFans(scene, hash):
     result['Performers'].append({ 'Name': getnamefromalias(username) })
     return result
 
+def sql_hash_file(scene):
+    fingerprints = scene['files'][0]['fingerprints']
+    oshash = [fp for fp in fingerprints if fp['type'] == 'oshash'][0]['value']
+    shasum = lookup_sha(oshash)
+    if shasum:
+        log.debug("Found in cache")
+        return shasum[0]
+    else:
+        log.debug("Not found in cache")
+        shasum = sha_file(scene)
+        add_sha256(shasum, oshash)
+        return shasum
+
 def scrape():
     FRAGMENT = json.loads(sys.stdin.read())
     SCENE_ID = FRAGMENT.get('id')
@@ -231,14 +245,7 @@ def scrape():
         log.error("Scene not found - check your config.py file")
         sys.exit(1)
     # log.debug(scene)
-    if len(scene['stash_ids']) > 0:
-        log.debug("Already in stash, skipping")
-        return None
-    alltags = [tag["id"] for tag in scene["tags"]]
-    if nomatch_id in alltags or success_id in alltags:
-        log.debug("Already searched, skipping")
-        return None
-    hash = sha_file(scene)
+    hash = sql_hash_file(scene)
     log.debug(hash)
     result = getPostByHash(hash)
     # if no result, add "SHA: No Match tag"
@@ -256,6 +263,7 @@ def scrape():
     return result
 
 def main():
+    setup_sqlite()
     try:
         result = scrape()
         print(json.dumps(result))
@@ -268,4 +276,4 @@ if __name__ == '__main__':
     main()
 
 # by Scruffy, feederbox826
-# Last Updated 2023-11-02
+# Last Updated 2023-11-08
