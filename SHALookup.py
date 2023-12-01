@@ -11,7 +11,7 @@ from confusables import remove
 from sqlite import lookup_sha, add_sha256, setup_sqlite
 
 from config import stashconfig, success_tag, failure_tag
-VERSION = "1.3.0-beta"
+VERSION = "1.3.1"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -235,6 +235,11 @@ def sql_hash_file(scene):
         add_sha256(shasum, oshash)
         return shasum
 
+def check_video_vertical(scene):
+    file = scene['files'][0]
+    ratio = file['height'] / file['width']
+    return ratio >= 1.5
+
 def scrape():
     FRAGMENT = json.loads(sys.stdin.read())
     SCENE_ID = FRAGMENT.get('id')
@@ -244,7 +249,7 @@ def scrape():
     if not scene:
         log.error("Scene not found - check your config.py file")
         sys.exit(1)
-    # log.debug(scene)
+    log.debug(scene)
     hash = sql_hash_file(scene)
     log.debug(hash)
     result = getPostByHash(hash)
@@ -258,6 +263,9 @@ def scrape():
             }
         })
         return None
+    # check if scene is vertical
+    if check_video_vertical(scene):
+        result['Tags'].append({ 'Name': 'Vertical Video' })
     # if result, add tag
     result['Tags'].append({ 'Name': success_tag })
     return result
