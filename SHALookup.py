@@ -9,9 +9,10 @@ from pathlib import Path
 from unicodedata import normalize
 from confusables import remove
 from sqlite import lookup_sha, add_sha256, setup_sqlite
+from oftitle import findTrailerTrigger
 
-from config import stashconfig, success_tag, failure_tag
-VERSION = "1.3.1"
+from config import stashconfig, success_tag, failure_tag, disable_nfkd
+VERSION = "1.3.2-beta"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -113,7 +114,7 @@ def truncate_title(title, max_length):
     return title[:title_end]
 
 def normalize_title(title):
-    normalized = normalize("NFKD", title)
+    normalized = title if disable_nfkd == True else normalize("NFKD", title)
     unconfused = remove(normalized)
     return unconfused.strip()
 
@@ -220,6 +221,9 @@ def parseOnlyFans(scene, hash):
     # add studio and performer
     result['Studio']['Name'] = f"{username} (OnlyFans)"
     result['Performers'].append({ 'Name': getnamefromalias(username) })
+    # add trailer tag if contains keywords
+    if findTrailerTrigger(result['Details']):
+        result['Tags'].append({ "Name": 'Trailer' })
     return result
 
 def sql_hash_file(scene):
