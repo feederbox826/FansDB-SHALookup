@@ -1,6 +1,6 @@
 import re
 
-dmRegex = "(?:^\s|[^\w])(dm)(?:s)(?:$\s|[^\w])"
+dmRegex = "(?:^|\s|[^\w])(dm)(?:[\'\‘\’\`\"\“\”])(?:s)(?:$|\s|[^\w])"
 triggerArray = [
     # DM / in your DMs
     "dm",
