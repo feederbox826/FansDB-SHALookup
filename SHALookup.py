@@ -41,15 +41,15 @@ def compute_sha256(file_name):
             hash_sha256.update(chunk)
     return hash_sha256.hexdigest()
 
-def sha_file(scene):
+def sha_file(fyle):
     try:
-        return compute_sha256(scene['files'][0]['path'])
+        return compute_sha256(fyle['path'])
     except FileNotFoundError:
         try:
-            log.debug(scene['files'][0]['path'])
+            log.debug(fyle['path'])
             # try looking in relative path
             # move up two directories from /scrapers/SHALookup
-            newpath = os.path.join(Path.cwd().parent.parent, scene['files'][0]['path'])
+            newpath = os.path.join(Path.cwd().parent.parent, fyle['path'])
             return compute_sha256(newpath)
         except FileNotFoundError:
             log.error("File not found. Check if the file exists and is accessible.")
@@ -223,8 +223,8 @@ def parseOnlyFans(scene, hash):
     result['Performers'].append({ 'Name': getnamefromalias(username) })
     return result
 
-def sql_hash_file(scene):
-    fingerprints = scene['files'][0]['fingerprints']
+def sql_hash_file(fyle):
+    fingerprints = fyle['fingerprints']
     oshash = [fp for fp in fingerprints if fp['type'] == 'oshash'][0]['value']
     shasum = lookup_sha(oshash)
     if shasum:
@@ -232,7 +232,7 @@ def sql_hash_file(scene):
         return shasum[0]
     else:
         log.debug("Not found in cache")
-        shasum = sha_file(scene)
+        shasum = sha_file(fyle)
         add_sha256(shasum, oshash)
         return shasum
 
@@ -251,9 +251,13 @@ def scrape():
         log.error("Scene not found - check your config.py file")
         sys.exit(1)
     log.debug(scene)
-    hash = sql_hash_file(scene)
-    log.debug(hash)
-    result = getPostByHash(hash)
+    result = None
+    for f in scene['files']:
+        hash = sql_hash_file(f)
+        log.debug(hash)
+        result = getPostByHash(hash)
+        if result is not None:
+            break
     # if no result, add "SHA: No Match tag"
     if (result == None):
         stash.update_scenes({
