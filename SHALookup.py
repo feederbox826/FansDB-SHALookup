@@ -53,7 +53,8 @@ def sha_file(scene):
             return compute_sha256(newpath)
         except FileNotFoundError:
             log.error("File not found. Check if the file exists and is accessible.")
-            sys.exit(1)
+            print("null")
+            sys.exit()
 
 # get post
 headers = {
