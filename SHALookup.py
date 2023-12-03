@@ -7,6 +7,7 @@ from html import unescape
 import re
 from pathlib import Path
 from unicodedata import normalize
+import emojis
 from confusables import remove
 from sqlite import lookup_sha, add_sha256, setup_sqlite
 
@@ -118,6 +119,13 @@ def truncate_title(title, max_length):
     # Check if the title is already under max length
     if len(title) <= max_length:
         return title
+    last_punctuation_index = -1
+    punctuation_chars = {'.', '!', '?', '❤', '☺'}
+    punctuation_chars.update(emojis.get(title))
+    for c in punctuation_chars:
+        last_punctuation_index = max(title.rfind(c, 0, max_length), last_punctuation_index)
+    if last_punctuation_index != -1:
+        return title[:last_punctuation_index+1]
     # Find the last space character before max length
     last_space_index = title.rfind(" ",0, max_length)
     # truncate at last_space_index if valid, else max_length
