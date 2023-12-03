@@ -11,8 +11,19 @@ from confusables import remove
 from sqlite import lookup_sha, add_sha256, setup_sqlite
 from oftitle import findTrailerTrigger
 
-from config import stashconfig, success_tag, failure_tag, disable_nfkd
-VERSION = "1.3.2-beta"
+# try importing config
+import config
+stashconfig = config.stashconfig if hasattr(config, 'stashconfig') else {
+    "scheme": "http",
+    "Host":"localhost",
+    "Port": "9999",
+    "ApiKey": "",
+}
+success_tag = config.success_tag if hasattr(config, 'success_tag') else "SHA: Match"
+failure_tag = config.failure_tag if hasattr(config, 'failure_tag') else "SHA: No Match"
+disable_nfkd = config.disable_nfkd if hasattr(config, 'disable_nfkd') else False
+
+VERSION = "1.3.3-beta"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -42,19 +53,20 @@ def compute_sha256(file_name):
             hash_sha256.update(chunk)
     return hash_sha256.hexdigest()
 
-def sha_file(scene):
+def sha_file(file):
     try:
-        return compute_sha256(scene['files'][0]['path'])
+        return compute_sha256(file['path'])
     except FileNotFoundError:
         try:
-            log.debug(scene['files'][0]['path'])
+            log.debug(file['path'])
             # try looking in relative path
             # move up two directories from /scrapers/SHALookup
-            newpath = os.path.join(Path.cwd().parent.parent, scene['files'][0]['path'])
+            newpath = os.path.join(Path.cwd().parent.parent, file['path'])
             return compute_sha256(newpath)
         except FileNotFoundError:
             log.error("File not found. Check if the file exists and is accessible.")
-            sys.exit(1)
+            print("null")
+            sys.exit()
 
 # get post
 headers = {
@@ -226,8 +238,8 @@ def parseOnlyFans(scene, hash):
         result['Tags'].append({ "Name": 'Trailer' })
     return result
 
-def sql_hash_file(scene):
-    fingerprints = scene['files'][0]['fingerprints']
+def sql_hash_file(file):
+    fingerprints = file['fingerprints']
     oshash = [fp for fp in fingerprints if fp['type'] == 'oshash'][0]['value']
     shasum = lookup_sha(oshash)
     if shasum:
@@ -235,7 +247,7 @@ def sql_hash_file(scene):
         return shasum[0]
     else:
         log.debug("Not found in cache")
-        shasum = sha_file(scene)
+        shasum = sha_file(file)
         add_sha256(shasum, oshash)
         return shasum
 
@@ -254,11 +266,15 @@ def scrape():
         log.error("Scene not found - check your config.py file")
         sys.exit(1)
     log.debug(scene)
-    hash = sql_hash_file(scene)
-    log.debug(hash)
-    result = getPostByHash(hash)
+    result = None
+    for f in scene['files']:
+        hash = sql_hash_file(f)
+        log.debug(hash)
+        result = getPostByHash(hash)
+        if result is not None:
+            break
     # if no result, add "SHA: No Match tag"
-    if (result == None):
+    if (result == None or not result['Title'] or not result['URL']):
         stash.update_scenes({
             'ids': [SCENE_ID],
             'tag_ids': {
@@ -288,4 +304,4 @@ if __name__ == '__main__':
     main()
 
 # by Scruffy, feederbox826
-# Last Updated 2023-11-08
+# Last Updated 2023-12-02
