@@ -1,3 +1,4 @@
+emojis
 requests
 lxml
 stashapp-tools
