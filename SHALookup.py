@@ -1,4 +1,5 @@
 import json
+import logging
 import sys
 import os
 import hashlib
@@ -303,6 +304,7 @@ def main():
         log.exit("Plugin exited normally.")
     except Exception as e:
         log.error(e)
+        logging.exception(e)
         log.exit("Plugin exited with an exception.")
 
 if __name__ == '__main__':
