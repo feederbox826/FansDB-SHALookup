@@ -6,7 +6,6 @@ from datetime import datetime
 from html import unescape
 import re
 from pathlib import Path
-from unicodedata import normalize
 from confusables import remove
 from sqlite import lookup_sha, add_sha256, setup_sqlite
 from oftitle import findTrailerTrigger
@@ -21,7 +20,6 @@ stashconfig = config.stashconfig if hasattr(config, 'stashconfig') else {
 }
 success_tag = config.success_tag if hasattr(config, 'success_tag') else "SHA: Match"
 failure_tag = config.failure_tag if hasattr(config, 'failure_tag') else "SHA: No Match"
-disable_nfkd = config.disable_nfkd if hasattr(config, 'disable_nfkd') else False
 
 VERSION = "1.4.0"
 MAX_TITLE_LENGTH = 64
@@ -126,8 +124,7 @@ def truncate_title(title, max_length):
     return title[:title_end]
 
 def normalize_title(title):
-    normalized = title if disable_nfkd == True else normalize("NFKD", title)
-    unconfused = remove(normalized)
+    unconfused = remove(title)
     return unconfused.strip()
 
 # from dolphinfix
