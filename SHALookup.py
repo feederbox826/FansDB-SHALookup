@@ -6,10 +6,10 @@ from datetime import datetime
 from html import unescape
 import re
 from pathlib import Path
-from unicodedata import normalize
 import emojis
 from confusables import remove
 from sqlite import lookup_sha, add_sha256, setup_sqlite
+from oftitle import findTrailerTrigger
 
 # try importing config
 import config
@@ -21,9 +21,8 @@ stashconfig = config.stashconfig if hasattr(config, 'stashconfig') else {
 }
 success_tag = config.success_tag if hasattr(config, 'success_tag') else "SHA: Match"
 failure_tag = config.failure_tag if hasattr(config, 'failure_tag') else "SHA: No Match"
-disable_nfkd = config.disable_nfkd if hasattr(config, 'disable_nfkd') else False
 
-VERSION = "1.3.2"
+VERSION = "1.4.0"
 MAX_TITLE_LENGTH = 64
 
 try:
@@ -133,8 +132,7 @@ def truncate_title(title, max_length):
     return title[:title_end]
 
 def normalize_title(title):
-    normalized = normalize("NFKD", title)
-    unconfused = remove(normalized)
+    unconfused = remove(title)
     return unconfused.strip()
 
 # from dolphinfix
@@ -240,6 +238,9 @@ def parseOnlyFans(scene, hash):
     # add studio and performer
     result['Studio']['Name'] = f"{username} (OnlyFans)"
     result['Performers'].append({ 'Name': getnamefromalias(username) })
+    # add trailer tag if contains keywords
+    if findTrailerTrigger(result['Details']):
+        result['Tags'].append({ "Name": 'Trailer' })
     return result
 
 def sql_hash_file(file):
@@ -278,7 +279,7 @@ def scrape():
         if result is not None:
             break
     # if no result, add "SHA: No Match tag"
-    if (result == None):
+    if (result == None or not result['Title'] or not result['URL']):
         stash.update_scenes({
             'ids': [SCENE_ID],
             'tag_ids': {
@@ -308,4 +309,4 @@ if __name__ == '__main__':
     main()
 
 # by Scruffy, feederbox826
-# Last Updated 2023-12-02
+# Last Updated 2023-12-06
