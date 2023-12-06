@@ -23,7 +23,7 @@ success_tag = config.success_tag if hasattr(config, 'success_tag') else "SHA: Ma
 failure_tag = config.failure_tag if hasattr(config, 'failure_tag') else "SHA: No Match"
 disable_nfkd = config.disable_nfkd if hasattr(config, 'disable_nfkd') else False
 
-VERSION = "1.3.3-beta"
+VERSION = "1.4.0-beta"
 MAX_TITLE_LENGTH = 64
 
 try:
