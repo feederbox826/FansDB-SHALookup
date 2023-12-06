@@ -1,15 +1,16 @@
+# stdlib
+from datetime import datetime
+import hashlib
+from html import unescape
 import json
 import logging
-import sys
 import os
-import hashlib
-from datetime import datetime
-from html import unescape
-import re
 from pathlib import Path
-import emojis
-from confusables import remove
+import re
 from sqlite import lookup_sha, add_sha256, setup_sqlite
+import sys
+# local modules
+from confusables import remove
 from oftitle import findTrailerTrigger
 
 # try importing config
@@ -23,9 +24,16 @@ stashconfig = config.stashconfig if hasattr(config, 'stashconfig') else {
 success_tag = config.success_tag if hasattr(config, 'success_tag') else "SHA: Match"
 failure_tag = config.failure_tag if hasattr(config, 'failure_tag') else "SHA: No Match"
 
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 MAX_TITLE_LENGTH = 64
 
+# pip modules
+try:
+    import emojis
+except ModuleNotFoundError:
+    log.error("You need to install the emojis module. (https://pypi.org/project/emojis/)")
+    log.error("If you have pip (normally installed with python), run this command in a terminal (cmd): pip install emojis")
+    sys.exit()
 try:
     import requests
 except ModuleNotFoundError:
@@ -70,7 +78,7 @@ def sha_file(file):
 
 # get post
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0'
 }
 
 # define stash globally
