@@ -14,7 +14,8 @@ triggerArray = [
     "teaser",
     "snippet",
     "entire",
-    "full video"
+    "full video",
+    "full vid",
     # message prompts
     "with the message",
     "message me",
