@@ -1,6 +1,6 @@
 import re
 
-dmRegex = "(?:^|\s*|[^\w]*)(dm)(?:[\'\‘\’\`\"\“\”]*)(?:s?)(?:$|\s*|[^\w]*)"
+dmRegex = "\b(dm)(?:[\'\‘\’\`\"\“\”]*)(?:s?)\b"
 triggerArray = [
     # DM / in your DMs
     "dm",
@@ -38,7 +38,7 @@ def findTrailerTrigger(oftitle):
         return True
     # check other regex array
     for trigger in triggerArray:
-        triggerRegex = "(?:^|\s)(" + trigger + ")(?:$|\s)"
+        triggerRegex = f"\b{trigger}\b"
         if re.search(triggerRegex, oftitle, re.IGNORECASE):
             return True
     return False
