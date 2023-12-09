@@ -301,9 +301,9 @@ def scrape():
     if check_video_vertical(scene):
         result['Tags'].append({ 'Name': 'Vertical Video' })
     # Other context based tags
-    if re.search(r"\bJOI\b", result['title'], flags=re.IGNORECASE):
+    if re.search(r"\bJOI\b", result['Title'], flags=re.IGNORECASE):
         result['Tags'].append({ 'Name': 'Jerk Off Instruction'})
-    if result['title'].lower().startswith('stream started at'):
+    if result['Title'].lower().startswith('stream started at'):
         result['Tags'].append({ 'Name': 'Livestream' })
     # if result, add tag
     result['Tags'].append({ 'Name': success_tag })
