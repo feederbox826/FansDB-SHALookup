@@ -1,13 +1,16 @@
-import json
-import sys
-import os
-import hashlib
+# stdlib
 from datetime import datetime
+import hashlib
 from html import unescape
-import re
+import json
+import logging
+import os
 from pathlib import Path
-from confusables import remove
+import re
 from sqlite import lookup_sha, add_sha256, setup_sqlite
+import sys
+# local modules
+from confusables import remove
 from oftitle import findTrailerTrigger
 
 # try importing config
@@ -21,9 +24,16 @@ stashconfig = config.stashconfig if hasattr(config, 'stashconfig') else {
 success_tag = config.success_tag if hasattr(config, 'success_tag') else "SHA: Match"
 failure_tag = config.failure_tag if hasattr(config, 'failure_tag') else "SHA: No Match"
 
-VERSION = "1.4.1"
+VERSION = "1.5.0"
 MAX_TITLE_LENGTH = 64
 
+# pip modules
+try:
+    import emojis
+except ModuleNotFoundError:
+    log.error("You need to install the emojis module. (https://pypi.org/project/emojis/)")
+    log.error("If you have pip (normally installed with python), run this command in a terminal (cmd): pip install emojis")
+    sys.exit()
 try:
     import requests
 except ModuleNotFoundError:
@@ -68,7 +78,7 @@ def sha_file(file):
 
 # get post
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0'
 }
 
 # define stash globally
@@ -117,6 +127,13 @@ def truncate_title(title, max_length):
     # Check if the title is already under max length
     if len(title) <= max_length:
         return title
+    last_punctuation_index = -1
+    punctuation_chars = {'.', '!', '?', '❤', '☺'}
+    punctuation_chars.update(emojis.get(title))
+    for c in punctuation_chars:
+        last_punctuation_index = max(title.rfind(c, 0, max_length), last_punctuation_index)
+    if last_punctuation_index != -1:
+        return title[:last_punctuation_index+1]
     # Find the last space character before max length
     last_space_index = title.rfind(" ",0, max_length)
     # truncate at last_space_index if valid, else max_length
@@ -295,6 +312,7 @@ def main():
         log.exit("Plugin exited normally.")
     except Exception as e:
         log.error(e)
+        logging.exception(e)
         log.exit("Plugin exited with an exception.")
 
 if __name__ == '__main__':
