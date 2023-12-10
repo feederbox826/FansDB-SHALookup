@@ -302,7 +302,9 @@ def scrape():
         result['Tags'].append({ 'Name': 'Vertical Video' })
     # Other context based tags
     if re.search(r"\bJOI\b", result['Title'], flags=re.IGNORECASE):
-        result['Tags'].append({ 'Name': 'Jerk Off Instruction'})
+        result['Tags'].append({ 'Name': 'Jerk Off Instruction' })
+    if re.search(r"\bCEI\b", result['Title'], flags=re.IGNORECASE):
+        result['Tags'].append({ 'Name': 'Cum Eating Instruction' })
     if result['Title'].lower().startswith('stream started at'):
         result['Tags'].append({ 'Name': 'Livestream' })
     # if result, add tag
