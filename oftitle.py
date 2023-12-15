@@ -1,6 +1,6 @@
 import re
 
-dmRegex = "\b(dm)(?:[\'\‘\’\`\"\“\”]*)(?:s?)\b"
+dmRegex = r"\b(dm)(?:[\'\‘\’\`\"\“\”]*)(?:s?)\b"
 triggerArray = [
     # DM / in your DMs
     "dm",
@@ -16,6 +16,7 @@ triggerArray = [
     "entire",
     "full video",
     "full vid",
+    "full scene",
     # message prompts
     "with the message",
     "message me",

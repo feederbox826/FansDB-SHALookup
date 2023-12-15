@@ -24,7 +24,7 @@ stashconfig = config.stashconfig if hasattr(config, 'stashconfig') else {
 success_tag = config.success_tag if hasattr(config, 'success_tag') else "SHA: Match"
 failure_tag = config.failure_tag if hasattr(config, 'failure_tag') else "SHA: No Match"
 
-VERSION = "1.5.0"
+VERSION = "1.5.1"
 MAX_TITLE_LENGTH = 64
 
 # pip modules
@@ -319,4 +319,4 @@ if __name__ == '__main__':
     main()
 
 # by Scruffy, feederbox826
-# Last Updated 2023-12-06
+# Last Updated 2023-12-14
