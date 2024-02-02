@@ -20,3 +20,7 @@ def add_sha256(sha256, oshash):
 def lookup_sha(oshash):
     cursor.execute("SELECT sha256 FROM sha_cache WHERE oshash = ?", [oshash])
     return cursor.fetchone()
+
+def get_rows():
+    cursor.execute("SELECT sha256, oshash FROM sha_cache")
+    return cursor.fetchall()

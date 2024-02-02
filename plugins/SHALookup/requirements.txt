@@ -1,4 +1,4 @@
 emojis
 requests
 lxml
-stashapp-tools
+stashapp-tools>=0.2.40
