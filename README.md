@@ -1,7 +1,16 @@
 # FansDB Scraper
 This is a scraper for [FansDB](https://docs.fansdb.xyz/)
 
-To use:
+v24 Instructions:
+- add the index address: `https://feederbox826.github.io/FansDB-SHALookup/develop/index.yml` as a scraper source
+- Install the following python modules with `pip install --user --break-system-packages NAME`
+  - `emojis`
+  - `requests`
+  - `lxml`
+  - `stashapp-tools`
+- edit your config.py? 
+
+v23 Instructions:
 - Clone this repository or download the zip file from this page
 - unpack into a folder inside your scraper folder
 - make sure you have python setup and the 3 modules needed
