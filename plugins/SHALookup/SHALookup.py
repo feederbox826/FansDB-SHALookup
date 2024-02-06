@@ -7,7 +7,6 @@ import logging
 import os
 from pathlib import Path
 import re
-from sqlite import lookup_sha, add_sha256, setup_sqlite
 import sys
 # local modules
 from confusables import remove
@@ -29,6 +28,12 @@ MAX_TITLE_LENGTH = 64
 
 # pip modules
 try:
+    import stashapi.log as log
+    from stashapi.stashapp import StashInterface
+except ModuleNotFoundError:
+    print("You need to install the stashapp-tools (stashapi) python module. (cmd): pip install stashapp-tools", file=sys.stderr)
+    sys.exit()
+try:
     import emojis
 except ModuleNotFoundError:
     log.error("You need to install the emojis module. (https://pypi.org/project/emojis/)")
@@ -46,12 +51,6 @@ except ModuleNotFoundError:
     log.error("You need to install the lxml module. (https://lxml.de/installation.html#installation)")
     log.error("If you have pip (normally installed with python), run this command in a terminal (cmd): pip install lxml")
     sys.exit()
-try:
-    import stashapi.log as log
-    from stashapi.stashapp import StashInterface
-except ModuleNotFoundError:
-    log.error("You need to install the stashapp-tools (stashapi) python module. (cmd): pip install stashapp-tools", file=sys.stderr)
-    sys.exit()
 
 # calculate sha256
 def compute_sha256(file_name):
@@ -66,7 +65,7 @@ def sha_file(file):
         return compute_sha256(file['path'])
     except FileNotFoundError:
         try:
-            log.debug(file['path'])
+            log.debug(f"file path: {file['path']}")
             # try looking in relative path
             # move up two directories from /scrapers/SHALookup
             newpath = os.path.join(Path.cwd().parent.parent, file['path'])
@@ -83,6 +82,13 @@ headers = {
 
 # define stash globally
 stash = StashInterface(stashconfig)
+
+def add_sha256(sha256, oshash):
+    scene = stash.find_scene_by_hash({"oshash":oshash}, fragment='id files { id fingerprint(type:"sha256") } ')
+    if scene["files"][0]["fingerprint"]:
+        return
+    stash.file_set_fingerprints(scene["files"][0]["id"], {"type": "sha256", "value":sha256})
+
 
 def getPostByHash(hash):
     shares = requests.get('https://coomer.su/api/v1/search_hash/' + hash, headers=headers, timeout=10)
@@ -172,7 +178,7 @@ def parseAPI(scene, hash):
     result['Tags'] = []
     # parse usernames
     usernames = searchPerformers(scene)
-    log.debug(usernames)
+    log.debug(f"{usernames=}")
     for name in list(set(usernames)):
         name = name.strip('.') # remove trailing full stop
         result['Performers'].append({'Name': getnamefromalias(name)})
@@ -252,18 +258,17 @@ def parseOnlyFans(scene, hash):
         result['Tags'].append({ "Name": 'Trailer' })
     return result
 
-def sql_hash_file(file):
+def hash_file(file):
     fingerprints = file['fingerprints']
-    oshash = [fp for fp in fingerprints if fp['type'] == 'oshash'][0]['value']
-    shasum = lookup_sha(oshash)
-    if shasum:
-        log.debug("Found in cache")
-        return shasum[0]
+    if sha256_fp := [fp for fp in fingerprints if fp['type'] == 'sha256']:
+        log.debug("Found in fingerprints")
+        return sha256_fp[0]['value']
     else:
-        log.debug("Not found in cache")
-        shasum = sha_file(file)
-        add_sha256(shasum, oshash)
-        return shasum
+        log.debug("Not found in fingerprints")
+        oshash = [fp for fp in fingerprints if fp['type'] == 'oshash'][0]['value']
+        sha256 = sha_file(file)
+        add_sha256(sha256, oshash)
+        return sha256
 
 def check_video_vertical(scene):
     file = scene['files'][0]
@@ -279,10 +284,9 @@ def scrape():
     if not scene:
         log.error("Scene not found - check your config.py file")
         sys.exit(1)
-    log.debug(scene)
     result = None
     for f in scene['files']:
-        hash = sql_hash_file(f)
+        hash = hash_file(f)
         log.debug(hash)
         result = getPostByHash(hash)
         if result is not None:
@@ -305,7 +309,6 @@ def scrape():
     return result
 
 def main():
-    setup_sqlite()
     try:
         result = scrape()
         print(json.dumps(result))
