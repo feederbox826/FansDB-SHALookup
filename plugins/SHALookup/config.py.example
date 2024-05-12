@@ -6,4 +6,4 @@ stashconfig = {
 }
 success_tag = "[SHA: Scraped]"
 failure_tag = "[SHA: No Match]"
-disable_nfkd = false
+disable_nfkd = False
