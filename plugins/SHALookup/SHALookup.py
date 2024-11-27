@@ -108,6 +108,7 @@ def getPostByHash(hash):
         log.error(f"Request failed with status code {postres.status}")
         sys.exit(1)
     scene = postres.json()
+    scene = scene["post"]
     return splitLookup(scene, hash)
 
 def splitLookup(scene, hash):
@@ -206,16 +207,12 @@ def getnamefromalias(alias):
     return alias
 
 def getFanslyUsername(id):
-    res = requests.get(f"https://coomer.su/fansly/user/{id}", headers=headers)
+    res = requests.get(f"https://coomer.su/api/v1/fansly/user/{id}/profile", headers=headers)
     if not res.status_code == 200:
         log.error(f"Request failed with status code {res.status}")
         sys.exit(1)
-    tree = html.fromstring(res.text)
-    userbox = tree.xpath('//*[@id="user-header__info-top"]/a/span[2]')
-    if (len(userbox) == 0):
-        log.error("No user found for id " + id)
-        return None
-    return userbox[0].text
+    profile = res.json()
+    return profile["name"]
 
 # if fansly
 def parseFansly(scene, hash):
