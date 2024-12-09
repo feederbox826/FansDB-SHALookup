@@ -1,4 +1,5 @@
 # stdlib
+import time
 from datetime import datetime
 import hashlib
 from html import unescape
@@ -77,7 +78,8 @@ def sha_file(file):
 
 # get post
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0',
+    'referer': 'https://coomer.su'
 }
 
 # define stash globally
@@ -91,7 +93,13 @@ def add_sha256(sha256, oshash):
 
 
 def getPostByHash(hash):
-    shares = requests.get('https://coomer.su/api/v1/search_hash/' + hash, headers=headers, timeout=10)
+    for attempt in range(1, 5):
+        shares = requests.get('https://coomer.su/api/v1/search_hash/' + hash, headers=headers, timeout=10)
+        if shares.status_code == 200:
+            break
+        log.debug(f"Request status code: {shares.status_code}")
+        time.sleep(2)
+    shares.raise_for_status()
     data = shares.json()
     if (shares.status_code == 404 or len(data) == 0):
         log.debug("No results found")
