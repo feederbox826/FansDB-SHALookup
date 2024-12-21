@@ -97,6 +97,9 @@ def getPostByHash(hash):
         shares = requests.get('https://coomer.su/api/v1/search_hash/' + hash, headers=headers, timeout=10)
         if shares.status_code == 200:
             break
+        if shares.status_code == 404:
+            log.debug("No results found")
+            return None
         log.debug(f"Request status code: {shares.status_code}")
         time.sleep(2)
     shares.raise_for_status()
