@@ -24,8 +24,14 @@ stashconfig = config.stashconfig if hasattr(config, 'stashconfig') else {
 success_tag = config.success_tag if hasattr(config, 'success_tag') else "SHA: Match"
 failure_tag = config.failure_tag if hasattr(config, 'failure_tag') else "SHA: No Match"
 
-VERSION = "1.6.0"
+VERSION = "2.0.0"
 MAX_TITLE_LENGTH = 64
+
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0',
+    'Referer': 'https://coomer.su/search_hash'
+}
+API_BASE = "https://coomer.su/api/v1/"
 
 # pip modules
 try:
@@ -46,12 +52,9 @@ except ModuleNotFoundError:
     log.error("You need to install the requests module. (https://docs.python-requests.org/en/latest/user/install/)")
     log.error("If you have pip (normally installed with python), run this command in a terminal (cmd): pip install requests")
     sys.exit()
-try:
-    from lxml import html
-except ModuleNotFoundError:
-    log.error("You need to install the lxml module. (https://lxml.de/installation.html#installation)")
-    log.error("If you have pip (normally installed with python), run this command in a terminal (cmd): pip install lxml")
-    sys.exit()
+
+session = requests.Session()
+session.headers.update(headers)
 
 # calculate sha256
 def compute_sha256(file_name):
@@ -76,25 +79,13 @@ def sha_file(file):
             print("null")
             sys.exit()
 
-# get post
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0',
-    'Referer': 'https://coomer.su/search_hash'
-}
-
 # define stash globally
 stash = StashInterface(stashconfig)
 
-def add_sha256(sha256, oshash):
-    scene = stash.find_scene_by_hash({"oshash":oshash}, fragment='id files { id fingerprint(type:"sha256") } ')
-    if scene["files"][0]["fingerprint"]:
-        return
-    stash.file_set_fingerprints(scene["files"][0]["id"], {"type": "sha256", "value":sha256})
-
-
+# get post
 def getPostByHash(hash):
-    for attempt in range(1, 5):
-        shares = requests.get('https://coomer.su/api/v1/search_hash/' + hash, headers=headers, timeout=10)
+    for _ in range(1, 5):
+        shares = session.get(f'{API_BASE}search_hash/{hash}', timeout=10)
         if shares.status_code == 200:
             break
         if shares.status_code == 404:
@@ -109,9 +100,9 @@ def getPostByHash(hash):
         return None
     # construct url to fetch from API
     post = data['posts'][0]
-    path = f'https://coomer.su/api/v1/{post["service"]}/user/{post["user"]}/post/{post["id"]}'
+    path = f'{API_BASE}/{post["service"]}/user/{post["user"]}/post/{post["id"]}'
     # fetch post
-    postres = requests.get(path, headers=headers)
+    postres = session.get(path)
     if postres.status_code == 404:
         log.error("Post not found")
         sys.exit(1)
@@ -218,7 +209,7 @@ def getnamefromalias(alias):
     return alias
 
 def getFanslyUsername(id):
-    res = requests.get(f"https://coomer.su/api/v1/fansly/user/{id}/profile", headers=headers)
+    res = session.get(f"{API_BASE}fansly/user/{id}/profile")
     if not res.status_code == 200:
         log.error(f"Request failed with status code {res.status}")
         sys.exit(1)
@@ -273,9 +264,9 @@ def hash_file(file):
         return sha256_fp[0]['value']
     else:
         log.debug("Not found in fingerprints")
-        oshash = [fp for fp in fingerprints if fp['type'] == 'oshash'][0]['value']
         sha256 = sha_file(file)
-        add_sha256(sha256, oshash)
+        # add to fingerprints
+        stash.file_set_fingerprints(file['id'], {"type": "sha256", "value": sha256})
         return sha256
 
 def check_video_vertical(scene):
@@ -287,7 +278,6 @@ def scrape():
     FRAGMENT = json.loads(sys.stdin.read())
     SCENE_ID = FRAGMENT.get('id')
     nomatch_id = stash.find_tag(failure_tag, create=True).get('id')
-    success_id = stash.find_tag(success_tag, create=True).get('id')
     scene = stash.find_scene(SCENE_ID)
     if not scene:
         log.error("Scene not found - check your config.py file")

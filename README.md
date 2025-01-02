@@ -6,7 +6,6 @@ v24 Instructions:
 - Install the following python modules with `pip install --user --break-system-packages NAME`
   - `emojis`
   - `requests`
-  - `lxml`
   - `stashapp-tools`
 - edit your config.py? 
 

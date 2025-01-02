@@ -1,4 +1,4 @@
-name: "SHA256 Lookup"
+name: "SHALookup"
 sceneByFragment:
     action: script
     script:
